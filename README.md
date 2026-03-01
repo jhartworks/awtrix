@@ -1,2 +1,2 @@
-# discord
-Discord websocket Message
+# AWTRIX Clock Module for Symcon
+
