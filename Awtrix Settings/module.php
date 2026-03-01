@@ -132,7 +132,7 @@ class AwtrixSettings extends IPSModule {
         $this->EnableAction("WDCI");
         SetValueInteger($this->GetIDForIdent("WDCI"),35071);
 
-        $this->RegisterVariableInteger ('BRI', 'BRI', [
+        $this->RegisterVariableInteger ('BRI', 'Brightness', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
             'MIN' => 0,
             'MAX' => 255,
@@ -185,7 +185,7 @@ class AwtrixSettings extends IPSModule {
         $this->EnableAction("DATE_COL");
         SetValueInteger($this->GetIDForIdent("DATE_COL"),16777215);
 
-        $this->RegisterVariableInteger ('TEMP_COL', 'TEMP_COL',[
+        $this->RegisterVariableInteger ('TEMP_COL', 'Temperature Color',[
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
             'ENCODING' => 0,
             'COLOR_SPACE' => 0,
@@ -194,7 +194,7 @@ class AwtrixSettings extends IPSModule {
         $this->EnableAction("TEMP_COL");
         SetValueInteger($this->GetIDForIdent("TEMP_COL"),16777215);
 
-         $this->RegisterVariableInteger ('HUM_COL', 'HUM_COL', [
+         $this->RegisterVariableInteger ('HUM_COL', 'Humidity Color', [
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
             'ENCODING' => 0,
             'COLOR_SPACE' => 0,
@@ -203,7 +203,7 @@ class AwtrixSettings extends IPSModule {
         $this->EnableAction("HUM_COL");
         SetValueInteger($this->GetIDForIdent("HUM_COL"),16777215);
 
-         $this->RegisterVariableInteger ('BAT_COL', 'BAT_COL', [
+         $this->RegisterVariableInteger ('BAT_COL', 'Battery Color', [
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
             'ENCODING' => 0,
             'COLOR_SPACE' => 0,
@@ -252,7 +252,7 @@ class AwtrixSettings extends IPSModule {
 
         $this->RegisterTimer("Update", 0, 'AWSET_UpdateConfig('.$this->InstanceID.');');
         $this->SetTimerInterval("Update", 10 * 1000);
-        
+
         parent::Create();
 
     }
