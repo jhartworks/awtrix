@@ -1,0 +1,14 @@
+{
+    "id": "{7CC60885-87E2-D9E6-7F79-A65435AFFF45}",
+    "name": "Awtrix Settings",
+    "type": 3,
+    "vendor": "Awtrix",
+    "aliases":
+    [
+    ],
+    "url": "https://blueforcer.github.io/",
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [],
+    "prefix": "AWSET"
+}

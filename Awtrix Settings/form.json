@@ -1,0 +1,48 @@
+{
+    "elements":
+    [
+        { "type": "ValidationTextBox", "name": "AwtrixIp", "caption": "IP or Hostname of Awtrix Clock" },
+        { "type": "CheckBox", "name": "TIM", "caption": "Enable Time App" },
+        { "type": "CheckBox", "name": "DAT", "caption": "Enable Date App" },
+        { "type": "CheckBox", "name": "HUM", "caption": "Enable Humidity App" },
+        { "type": "CheckBox", "name": "TEMP", "caption": "Enable Temp App" },
+        { "type": "CheckBox", "name": "BAT", "caption": "Enable Battery App" },
+        { "type": "Select", "name": "TFORMAT", "caption": "Time-Format",
+        "options": [
+                { "caption": "13:30:45", "value": "%H:%M:%S" },
+                { "caption": "1:30:45", "value": "%l:%M:%S" },
+                { "caption": "13:30", "value": "%H:%M" },
+                { "caption": "13.30", "value": "%H %M" },
+                { "caption": "1:30", "value": "%l:%M" },
+                { "caption": "1.30", "value": "%l %M" },
+                { "caption": "1:30 PM", "value": "%l:%M %p" },
+                { "caption": "1.30 PM", "value": "%l %M %p" }
+            ]
+        },
+        { "type": "Select", "name": "DFORMAT", "caption": "Time-Format",
+            "options": [
+                    { "caption": "16.04.22", "value": "%d.%m.%y" },
+                    { "caption": "16.04", "value": "%d.%m" },
+                    { "caption": "22-04-16", "value": "%y-%m-%d" },
+                    { "caption": "04-16", "value": "%m-%d" },
+                    { "caption": "04/16/22", "value": "%m/%d/%y" },
+                    { "caption": "04/16", "value": "%m/%d" },
+                    { "caption": "16/04/22", "value": "%d/%m/%y" },
+                    { "caption": "16/04", "value": "%d/%m" },
+                    { "caption": "04-16-22", "value": "%m-%d-%y" }
+                ]
+        },
+        { "type": "CheckBox", "name": "SOM", "caption": "Start the week on Monday" },
+        { "type": "CheckBox", "name": "CEL", "caption": "Shows the temperature in Celsius (Fahrenheit when false)." },
+        { "type": "SelectColor", "name": "CCORRECTION", "caption": "Color Correction","allowTransparent": false },
+        { "type": "SelectColor", "name": "CTEMP", "caption": "Color Temperatur","allowTransparent": false }
+    ],
+    "actions":
+    [
+        { "type": "Button", "label": "Send Message", "onClick": "AWSET_SendSetting($id);" }
+    ],
+    "status":
+    [
+
+    ]
+}
