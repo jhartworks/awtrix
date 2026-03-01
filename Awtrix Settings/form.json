@@ -19,7 +19,7 @@
                 { "caption": "1.30 PM", "value": "%l %M %p" }
             ]
         },
-        { "type": "Select", "name": "DFORMAT", "caption": "Time-Format",
+        { "type": "Select", "name": "DFORMAT", "caption": "Date-Format",
             "options": [
                     { "caption": "16.04.22", "value": "%d.%m.%y" },
                     { "caption": "16.04", "value": "%d.%m" },
@@ -39,7 +39,8 @@
     ],
     "actions":
     [
-        { "type": "Button", "label": "Send Message", "onClick": "AWSET_SendSetting($id);" }
+        { "type": "Button", "label": "Send Settings", "onClick": "AWSET_SendSetting($id);" },
+        { "type": "Button", "label": "Get Settings", "onClick": "AWSET_UpdateConfig($id);" }
     ],
     "status":
     [
