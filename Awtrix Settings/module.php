@@ -532,7 +532,8 @@ class AwtrixSettings extends IPSModule {
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HTTPGET, true);
-
+            curl_setopt($ch, CURLOPT_TIMEOUT_MS, 2500);
+            
             $response = curl_exec($ch);
             $error = curl_error($ch);
 
