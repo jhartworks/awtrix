@@ -7,7 +7,7 @@ class AwtrixSettings extends IPSModule {
 
     
     public function Create() {
-
+        $this->SetStatus(101);
         $this->RegisterAttributeString('Settings','');
         $this->RegisterAttributeInteger('State',0);
 
@@ -284,7 +284,7 @@ class AwtrixSettings extends IPSModule {
     }
 
     public function SendSetting() {
-   
+        if (!$this->CheckIP()) {
             // Discord webhook URL
             $awtrixIp = $this->ReadPropertyString("AwtrixIp");
             $url="http://{$awtrixIp}/api/settings";
@@ -412,7 +412,7 @@ class AwtrixSettings extends IPSModule {
             curl_close($ch);
         
             //$this->WriteAttributeString('Settings',$settings);
-
+        }
     
     }
     public function UpdateConfig() {
@@ -491,7 +491,8 @@ class AwtrixSettings extends IPSModule {
     }
 
     public function SendReboot() {
-   
+
+        if (!$this->CheckIP()) {
             // Discord webhook URL
             $awtrixIp = $this->ReadPropertyString("AwtrixIp");
             $url="http://{$awtrixIp}/api/reboot";
@@ -519,6 +520,7 @@ class AwtrixSettings extends IPSModule {
             $error = curl_error($ch);
 
             curl_close($ch);
+        }
 
     }
 
@@ -540,11 +542,14 @@ class AwtrixSettings extends IPSModule {
                 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 if ($http_code == 200) {
                     return true;
+                    $this->SetStatus(102);
                 } else {
                     return false;
+                    $this->SetStatus(104);
                 }
             } else {
                 return false;
+                $this->SetStatus(104);
             }
 
     }
