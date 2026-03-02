@@ -7,7 +7,6 @@ class AwtrixSettings extends IPSModule {
 
     
     public function Create() {
-        $this->SetStatus(101);
         $this->RegisterAttributeString('Settings','');
         $this->RegisterAttributeInteger('State',0);
 
