@@ -1,0 +1,18 @@
+{
+    "elements":
+    [
+        { "type": "ValidationTextBox", "name": "AwtrixIp", "caption": "IP or Hostname of Awtrix Clock" },
+        { "type": "ValidationTextBox", "name": "Prefix", "caption": "" },
+        { "type": "ValidationTextBox", "name": "Suffix", "caption": "" }
+
+    
+    ],
+    "actions":
+    [
+        { "type": "Button", "label": "Send App", "onClick": "AWAPP_SendApp($id);" }
+    ],
+    "status":
+    [
+
+    ]
+}

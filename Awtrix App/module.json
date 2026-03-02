@@ -1,0 +1,14 @@
+{
+    "id": "{6637E1B4-E90A-68C3-4FFD-CE8969F9F693}",
+    "name": "Awtrix App",
+    "type": 3,
+    "vendor": "Awtrix",
+    "aliases":
+    [
+    ],
+    "url": "https://blueforcer.github.io/",
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [],
+    "prefix": "AWAPP"
+}
