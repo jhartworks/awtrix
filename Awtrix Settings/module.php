@@ -9,7 +9,7 @@ class AwtrixSettings extends IPSModule {
     public function Create() {
 
         $this->RegisterAttributeString('Settings','');
-
+        $this->RegisterAttributeInteger('State',0);
 
         $this->RegisterPropertyString('AwtrixIp','172.78.88.67');
         $this->RegisterPropertyBoolean('TIM',true);
@@ -248,7 +248,9 @@ class AwtrixSettings extends IPSModule {
             "frost"*/
            
         // Diese Zeile nicht löschen.
+
         $this->UpdateConfig();
+    
 
         $this->RegisterTimer("Update", 0, 'AWSET_UpdateConfig('.$this->InstanceID.');');
         $this->SetTimerInterval("Update", 10 * 1000);
@@ -414,7 +416,8 @@ class AwtrixSettings extends IPSModule {
     
     }
     public function UpdateConfig() {
-   
+
+        if ($this->CheckIP()) {
             $awtrixIp = $this->ReadPropertyString("AwtrixIp");
             $url="http://{$awtrixIp}/api/settings";
             
@@ -483,7 +486,7 @@ class AwtrixSettings extends IPSModule {
             //$this->WriteAttributeString('Settings',$data);
 
             
-  
+        }
 
     }
 
@@ -519,6 +522,32 @@ class AwtrixSettings extends IPSModule {
 
     }
 
+    public function CheckIP() {
+   
+            // Discord webhook URL
+            $awtrixIp = $this->ReadPropertyString("AwtrixIp");
+            $url="http://{$awtrixIp}/api/stats";
+
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPGET, true);
+
+            $response = curl_exec($ch);
+            $error = curl_error($ch);
+
+            curl_close($ch);
+            if (!curl_errno($ch)) {
+                $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                if ($http_code == 200) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+
+    }
 }
 
 ?>
