@@ -1,6 +1,6 @@
 <?
 // Klassendefinition
-class AwtrixSettings extends IPSModule {
+class AwtrixApp extends IPSModule {
     // Überschreibt die interne IPS_Create($id) Funktion
 
 
@@ -12,14 +12,14 @@ class AwtrixSettings extends IPSModule {
 
 
         $this->RegisterPropertyString('AwtrixIp','172.78.88.67');
-        $this->RegisterPropertyString('Prefix','You App says ');
+        $this->RegisterPropertyString('Prefix','');
         $this->RegisterPropertyString('Suffix','');
 
-        $this->RegisterVariableString('finaltext', 'Displayed Text', [
-                'PRESENTATION' => VARIABLE_PRESENTATION_TEXT
-            ], 0);
 
-        $this->RegisterVariableInteger ('textCase', 'Text Case', [
+
+
+
+        $this->RegisterVariableInteger ('textCase', 'Textcase', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
             'MIN' => 0,
             'MAX' => 2,
@@ -29,21 +29,31 @@ class AwtrixSettings extends IPSModule {
         ], 0);
         $this->EnableAction("textCase");
         SetValueInteger($this->GetIDForIdent("textCase"),7);
-        
-        $this->RegisterVariableBoolean('topText', 'Display Text on Top', [
+
+        $this->RegisterVariableBoolean ('topText', 'Top Text', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 170);
+        ], 10);
         $this->EnableAction("topText");
         SetValueBoolean($this->GetIDForIdent("topText"),0);
 
-        $this->RegisterVariableBoolean('center', 'Display Text Center', [
+        $this->RegisterVariableInteger ('textOffset', 'Text Offset', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 0,
+            'MAX' => 32,
+            'STEP_SIZE' => 1,
+            'USAGE_TYPE' => 5, ///5 = none
+            'SUFFIX' => ''
+        ], 20);
+        $this->EnableAction("textOffset");
+        SetValueInteger($this->GetIDForIdent("textOffset"),0);
+
+        $this->RegisterVariableBoolean ('topText', 'Top Text', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 170);
-        $this->EnableAction("center");
-        SetValueBoolean($this->GetIDForIdent("center"),0);
+        ], 30);
+        $this->EnableAction("topText");
+        SetValueBoolean($this->GetIDForIdent("topText"),1);
 
-
-        $this->RegisterVariableInteger ('color', 'Global App Color',[
+        $this->RegisterVariableInteger ('color', 'Text Color',[
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
             'ENCODING' => 0,
             'COLOR_SPACE' => 0,
@@ -52,13 +62,14 @@ class AwtrixSettings extends IPSModule {
         $this->EnableAction("color");
         SetValueInteger($this->GetIDForIdent("color"),16777215); ///is white...Frank White
 
-        $this->RegisterVariableBoolean('gradient', 'Display Color Gradient', [
+        
+        $this->RegisterVariableBoolean ('gradient', 'Colorgradient', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 170);
+        ], 30);
         $this->EnableAction("gradient");
-        SetValueBoolean($this->GetIDForIdent("gradient"),0);
+        SetValueBoolean($this->GetIDForIdent("gradient"),1);
 
-        $this->RegisterVariableInteger ('gradient01', 'Gradient Color 01',[
+        $this->RegisterVariableInteger ('gradient01', 'Frist Color Gradient',[
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
             'ENCODING' => 0,
             'COLOR_SPACE' => 0,
@@ -67,7 +78,7 @@ class AwtrixSettings extends IPSModule {
         $this->EnableAction("gradient01");
         SetValueInteger($this->GetIDForIdent("gradient01"),16777215); ///is white...Frank White
 
-        $this->RegisterVariableInteger ('gradient02', 'Gradient Color 02',[
+        $this->RegisterVariableInteger ('gradient02', 'Second Color Gradient',[
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
             'ENCODING' => 0,
             'COLOR_SPACE' => 0,
@@ -76,7 +87,9 @@ class AwtrixSettings extends IPSModule {
         $this->EnableAction("gradient02");
         SetValueInteger($this->GetIDForIdent("gradient02"),16777215); ///is white...Frank White
 
-        $this->RegisterVariableInteger ('blinkText', 'Blinktime Text', [
+
+
+        $this->RegisterVariableInteger ('TSPEED', 'Transisiontime', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
             'MIN' => 0,
             'MAX' => 2000,
@@ -84,94 +97,9 @@ class AwtrixSettings extends IPSModule {
             'USAGE_TYPE' => 5, ///5 = none
             'SUFFIX' => ' ms'
         ], 20);
-        $this->EnableAction("blinkText");
-        SetValueInteger($this->GetIDForIdent("blinkText"),0);
+        $this->EnableAction("TSPEED");
+        SetValueInteger($this->GetIDForIdent("TSPEED"),500);
 
-        $this->RegisterVariableInteger ('fadeText', 'Fade Text', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0,
-            'MAX' => 2000,
-            'STEP_SIZE' => 50,
-            'USAGE_TYPE' => 5, ///5 = none
-            'SUFFIX' => ' ms'
-        ], 20);
-        $this->EnableAction("fadeText");
-        SetValueInteger($this->GetIDForIdent("fadeText"),0);
-
-        $this->RegisterVariableInteger ('background', 'Backgroundcolor',[
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 30);
-        $this->EnableAction("background");
-        SetValueInteger($this->GetIDForIdent("background"),0); ///Jack Black
-
-        $this->RegisterVariableBoolean('rainbow', 'Rainbow', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 170);
-        $this->EnableAction("rainbow");
-        SetValueBoolean($this->GetIDForIdent("rainbow"),0);
-
-
-        $this->RegisterVariableInteger ('icon', 'Icon (must be downloaded on WebIf)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_INPUT,
-            'SUFFIX' => '',
-        ], 0);
-        $this->EnableAction("icon");
-        SetValueInteger($this->GetIDForIdent("icon"),0);
-
-        $this->RegisterVariableInteger ('pushIcon', 'Push Icon', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0,
-            'MAX' => 2,
-            'STEP_SIZE' => 1,
-            'USAGE_TYPE' => 5, ///5 = none
-            'SUFFIX' => '',
-        ], 0);
-        $this->EnableAction("pushIcon");
-        SetValueInteger($this->GetIDForIdent("pushIcon"),7);
-
-
-        $this->RegisterVariableInteger ('repeat', 'Repeat', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => -1,
-            'MAX' => 20,
-            'STEP_SIZE' => 1,
-            'USAGE_TYPE' => 5, ///5 = none
-            'SUFFIX' => ''
-        ], 10);
-        $this->EnableAction("repeat");
-        SetValueInteger($this->GetIDForIdent("repeat"),-1);
-
-        $this->RegisterVariableInteger ('duration', 'Duration', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 1,
-            'MAX' => 60,
-            'STEP_SIZE' => 1,
-            'USAGE_TYPE' => 5, ///5 = none
-            'SUFFIX' => ''
-        ], 10);
-        $this->EnableAction("duration");
-        SetValueInteger($this->GetIDForIdent("duration"),-1);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
          $this->RegisterVariableInteger ('TCOL', 'Global Text Color',[
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
             'ENCODING' => 0,
@@ -274,7 +202,11 @@ class AwtrixSettings extends IPSModule {
         $this->EnableAction("BLOCKN");
         SetValueBoolean($this->GetIDForIdent("BLOCKN"),1);
 
-
+        $this->RegisterVariableBoolean('UPPERCASE', 'Display Uppercase', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], 170);
+        $this->EnableAction("UPPERCASE");
+        SetValueBoolean($this->GetIDForIdent("UPPERCASE"),0);
 
         $this->RegisterVariableInteger ('TIME_COL', 'Time Color', [
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
