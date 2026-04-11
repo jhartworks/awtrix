@@ -3,6 +3,278 @@
 class AwtrixApp extends IPSModule {
     // Überschreibt die interne IPS_Create($id) Funktion
 
+     private function RegisterAllAwtrixVariables(): void
+    {
+        $p = 0;
+
+        // text
+        $this->RegisterVarStr('text', 'Text', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, '', 1);
+
+        // textCase (0..2)
+        $this->RegisterVarInt('textCase', 'Textcase', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 0, 'MAX' => 2, 'STEP_SIZE' => 1,
+            'USAGE_TYPE' => 5
+        ], $p+=10, 0, 1);
+
+        $this->RegisterVarBool('topText', 'Top Text', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, false, 1);
+
+        $this->RegisterVarInt('textOffset', 'Text Offset', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 0, 'MAX' => 32, 'STEP_SIZE' => 1,
+            'USAGE_TYPE' => 5
+        ], $p+=10, 0, 1);
+
+        $this->RegisterVarBool('center', 'Center short text', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, true, 1);
+
+        // color (text/bar/line)
+        $this->RegisterVarInt('color', 'Color', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
+            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
+        ], $p+=10, 16777215, 1);
+
+        // gradient (AWTRIX expects array of 2 colors) -> we model as enable + 2 colors
+        $this->RegisterVarBool('gradientEnabled', 'Gradient enabled', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, false, 1);
+
+        $this->RegisterVarInt('gradient01', 'Gradient Color 1', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
+            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
+        ], $p+=10, 16777215, 1);
+
+        $this->RegisterVarInt('gradient02', 'Gradient Color 2', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
+            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
+        ], $p+=10, 16777215, 1);
+
+        // blinkText / fadeText (ms)
+        $this->RegisterVarInt('blinkText', 'Blink Text (ms)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 0, 'MAX' => 10000, 'STEP_SIZE' => 100,
+            'USAGE_TYPE' => 5, 'SUFFIX' => ' ms'
+        ], $p+=10, 0, 1);
+
+        $this->RegisterVarInt('fadeText', 'Fade Text (ms)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 0, 'MAX' => 10000, 'STEP_SIZE' => 100,
+            'USAGE_TYPE' => 5, 'SUFFIX' => ' ms'
+        ], $p+=10, 0, 1);
+
+        // background
+        $this->RegisterVarInt('background', 'Background', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
+            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
+        ], $p+=10, 0, 1);
+
+        $this->RegisterVarBool('rainbow', 'Rainbow text', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, false, 1);
+
+        // icon (id/filename/base64)
+        $this->RegisterVarStr('icon', 'Icon (ID/Filename/Base64)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, '', 1);
+
+        // pushIcon (0..2)
+        $this->RegisterVarInt('pushIcon', 'Push Icon', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 0, 'MAX' => 2, 'STEP_SIZE' => 1,
+            'USAGE_TYPE' => 5
+        ], $p+=10, 0, 1);
+
+        // repeat (-1 = forever)
+        $this->RegisterVarInt('repeat', 'Repeat (-1 forever)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT,
+            'USAGE_TYPE' => 5
+        ], $p+=10, -1, 1);
+
+        // duration (seconds)
+        $this->RegisterVarInt('duration', 'Duration (s)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 1, 'MAX' => 300, 'STEP_SIZE' => 1,
+            'USAGE_TYPE' => 5, 'SUFFIX' => ' s'
+        ], $p+=10, 5, 1);
+
+        // Notification-only keys
+        $this->RegisterVarBool('hold', 'Notification: hold', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, false, 1);
+
+        $this->RegisterVarStr('sound', 'Notification: sound (filename/id)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, '', 1);
+
+        $this->RegisterVarStr('rtttl', 'Notification: RTTTL string', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, '', 1);
+
+        $this->RegisterVarBool('loopSound', 'Notification: loop sound', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, false, 1);
+
+        // bar / line arrays -> store as JSON or CSV in a string
+        $this->RegisterVarStr('bar', 'Bar values (JSON/CSV)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, '', 1);
+
+        $this->RegisterVarStr('line', 'Line values (JSON/CSV)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, '', 1);
+
+        $this->RegisterVarBool('autoscale', 'Autoscale bar/line', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, true, 1);
+
+        $this->RegisterVarInt('barBC', 'Bar Background Color', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
+            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
+        ], $p+=10, 0, 1);
+
+        // progress (-1 disables)
+        $this->RegisterVarInt('progress', 'Progress (-1 off, 0..100)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => -1, 'MAX' => 100, 'STEP_SIZE' => 1,
+            'USAGE_TYPE' => 5
+        ], $p+=10, -1, 1);
+
+        $this->RegisterVarInt('progressC', 'Progress Color', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
+            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
+        ], $p+=10, -1, 1);
+
+        $this->RegisterVarInt('progressBC', 'Progress Background Color', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
+            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
+        ], $p+=10, -1, 1);
+
+        // pos (experimental)
+        $this->RegisterVarInt('pos', 'Position in loop (experimental)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT,
+            'USAGE_TYPE' => 5
+        ], $p+=10, 0, 1);
+
+        // draw (array of objects) -> string
+        $this->RegisterVarStr('draw', 'Draw instructions (JSON)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, '', 1);
+
+        // lifetime / lifetimeMode
+        $this->RegisterVarInt('lifetime', 'Lifetime (s)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 0, 'MAX' => 86400, 'STEP_SIZE' => 10,
+            'USAGE_TYPE' => 5, 'SUFFIX' => ' s'
+        ], $p+=10, 0, 1);
+
+        $this->RegisterVarInt('lifetimeMode', 'Lifetime Mode (0 delete, 1 stale)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 0, 'MAX' => 1, 'STEP_SIZE' => 1,
+            'USAGE_TYPE' => 5
+        ], $p+=10, 0, 1);
+
+        $this->RegisterVarBool('stack', 'Notification stack', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, true, 1);
+
+        $this->RegisterVarBool('wakeup', 'Wakeup display on notification', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, false, 1);
+
+        $this->RegisterVarBool('noScroll', 'Disable scrolling', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, false, 1);
+
+        $this->RegisterVarStr('clients', 'Forward clients (JSON array)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, '', 1);
+
+        $this->RegisterVarInt('scrollSpeed', 'Scroll Speed (%)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 10, 'MAX' => 200, 'STEP_SIZE' => 5,
+            'USAGE_TYPE' => 5, 'SUFFIX' => ' %'
+        ], $p+=10, 100, 1);
+
+        $this->RegisterVarStr('effect', 'Background effect name', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, '', 1);
+
+        $this->RegisterVarStr('effectSettings', 'Effect settings (JSON map)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, '', 1);
+
+        $this->RegisterVarBool('save', 'Save app to flash (careful!)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p+=10, false, 1);
+
+        // app-specific overlay (clear/snow/rain/...)
+        $this->RegisterVarStr('overlay', 'Overlay (app-specific)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
+        ], $p+=10, 'clear', 1);
+
+    }
+    
+    private function SetDefaultIfNew(string $ident, callable $setter, $value): void
+    {
+        // RegisterVariable* kann je nach Strict/Non-Strict bool oder int liefern.
+        // Deshalb setzen wir Default robust über GetIDForIdent.
+        $varId = @$this->GetIDForIdent($ident);
+        if ($varId > 0) {
+            // Wenn Variable noch "leer" wäre, müsstest du New-Check anders machen.
+            // Pragmatismus: Defaults immer setzen ist oft unerwünscht.
+            // => Wir setzen Defaults NUR, wenn Variable noch nicht existierte: das checken wir über IPS_VariableExists.
+            // Aber: GetIDForIdent wirft Fehler, wenn nicht existiert. Daher oben @.
+        }
+
+    }
+
+    private function RegisterVarInt(string $ident, string $name, array $presentation, int $pos, int $default, int $enableAction = 1): void
+    {
+        $ret = $this->RegisterVariableInteger($ident, $name, $presentation, $pos);
+
+        if ($enableAction) {
+            $this->EnableAction($ident);
+        }
+
+        // Default nur setzen, wenn neu erstellt:
+        if ($ret === true || is_int($ret)) {
+            $id = is_int($ret) ? $ret : $this->GetIDForIdent($ident);
+            SetValueInteger($id, $default);
+        }
+    }
+
+    private function RegisterVarBool(string $ident, string $name, array $presentation, int $pos, bool $default, int $enableAction = 1): void
+    {
+        $ret = $this->RegisterVariableBoolean($ident, $name, $presentation, $pos);
+
+        if ($enableAction) {
+            $this->EnableAction($ident);
+        }
+
+        if ($ret === true || is_int($ret)) {
+            $id = is_int($ret) ? $ret : $this->GetIDForIdent($ident);
+            SetValueBoolean($id, $default);
+        }
+    }
+
+    private function RegisterVarStr(string $ident, string $name, array $presentation, int $pos, string $default, int $enableAction = 1): void
+    {
+        $ret = $this->RegisterVariableString($ident, $name, $presentation, $pos);
+
+        if ($enableAction) {
+            $this->EnableAction($ident);
+        }
+
+        if ($ret === true || is_int($ret)) {
+            $id = is_int($ret) ? $ret : $this->GetIDForIdent($ident);
+            SetValueString($id, $default);
+        }
+    }
 
 
     
@@ -15,280 +287,8 @@ class AwtrixApp extends IPSModule {
         $this->RegisterPropertyString('Prefix','');
         $this->RegisterPropertyString('Suffix','');
 
-
-
-
-
-        $this->RegisterVariableInteger ('textCase', 'Textcase', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0,
-            'MAX' => 2,
-            'STEP_SIZE' => 1,
-            'USAGE_TYPE' => 5, ///5 = none
-            'SUFFIX' => '',
-        ], 0);
-        $this->EnableAction("textCase");
-        SetValueInteger($this->GetIDForIdent("textCase"),7);
-
-        $this->RegisterVariableBoolean ('topText', 'Top Text', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 10);
-        $this->EnableAction("topText");
-        SetValueBoolean($this->GetIDForIdent("topText"),0);
-
-        $this->RegisterVariableInteger ('textOffset', 'Text Offset', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0,
-            'MAX' => 32,
-            'STEP_SIZE' => 1,
-            'USAGE_TYPE' => 5, ///5 = none
-            'SUFFIX' => ''
-        ], 20);
-        $this->EnableAction("textOffset");
-        SetValueInteger($this->GetIDForIdent("textOffset"),0);
-
-        $this->RegisterVariableBoolean ('topText', 'Top Text', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 30);
-        $this->EnableAction("topText");
-        SetValueBoolean($this->GetIDForIdent("topText"),1);
-
-        $this->RegisterVariableInteger ('color', 'Text Color',[
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 30);
-        $this->EnableAction("color");
-        SetValueInteger($this->GetIDForIdent("color"),16777215); ///is white...Frank White
-
-        
-        $this->RegisterVariableBoolean ('gradient', 'Colorgradient', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 30);
-        $this->EnableAction("gradient");
-        SetValueBoolean($this->GetIDForIdent("gradient"),1);
-
-        $this->RegisterVariableInteger ('gradient01', 'Frist Color Gradient',[
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 30);
-        $this->EnableAction("gradient01");
-        SetValueInteger($this->GetIDForIdent("gradient01"),16777215); ///is white...Frank White
-
-        $this->RegisterVariableInteger ('gradient02', 'Second Color Gradient',[
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 30);
-        $this->EnableAction("gradient02");
-        SetValueInteger($this->GetIDForIdent("gradient02"),16777215); ///is white...Frank White
-
-
-
-        $this->RegisterVariableInteger ('TSPEED', 'Transisiontime', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0,
-            'MAX' => 2000,
-            'STEP_SIZE' => 50,
-            'USAGE_TYPE' => 5, ///5 = none
-            'SUFFIX' => ' ms'
-        ], 20);
-        $this->EnableAction("TSPEED");
-        SetValueInteger($this->GetIDForIdent("TSPEED"),500);
-
-         $this->RegisterVariableInteger ('TCOL', 'Global Text Color',[
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 30);
-        $this->EnableAction("TCOL");
-        SetValueInteger($this->GetIDForIdent("TCOL"),16777215); ///is white...Frank White
-
-        $this->RegisterVariableInteger ('TMODE', 'Time App Style',[
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0,
-            'MAX' => 6,
-            'STEP_SIZE' => 1,
-            'USAGE_TYPE' => 5, ///5 = none
-            'SUFFIX' => ''
-        ], 40);
-        $this->EnableAction("TMODE");
-        SetValueInteger($this->GetIDForIdent("TMODE"),1);
-
-        $this->RegisterVariableInteger ('CHCOL', 'Calendar Header Color', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 50);
-        $this->EnableAction("CHCOL");
-        SetValueInteger($this->GetIDForIdent("CHCOL"),16711680); //Red like Reddington
-
-
-         $this->RegisterVariableInteger ('CBCOL', 'Calendar Body Color', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 60);
-        $this->EnableAction("CBCOL");
-        SetValueInteger($this->GetIDForIdent("CBCOL"),16777215); //white
-
-
-         $this->RegisterVariableInteger ('CTCOL', 'Calendar Text Color', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 70);
-        $this->EnableAction("CTCOL");
-        SetValueInteger($this->GetIDForIdent("CTCOL"),0); //i see black for you
-
-        $this->RegisterVariableBoolean ('WD', 'show Weekday', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 80);
-        $this->EnableAction("WD");
-        SetValueBoolean($this->GetIDForIdent("WD"),0);
-
-        $this->RegisterVariableInteger ('WDCA', 'Active Weekday Color', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 90);
-        $this->EnableAction("WDCA");
-        SetValueInteger($this->GetIDForIdent("WDCA"),65535);
-
-         $this->RegisterVariableInteger ('WDCI', 'Inactive Weekday Color', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 100);
-        $this->EnableAction("WDCI");
-        SetValueInteger($this->GetIDForIdent("WDCI"),35071);
-
-        $this->RegisterVariableInteger ('BRI', 'Brightness', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0,
-            'MAX' => 255,
-            'PERCENTAGE' => true,
-            'USAGE_TYPE' => 2, ///5 = none
-            'SUFFIX' => ' %'
-        ], 110);
-        $this->EnableAction("BRI");
-        SetValueInteger($this->GetIDForIdent("BRI"),128);
-
-         $this->RegisterVariableBoolean ('ABRI', 'Automatic Brightness', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 120);
-        $this->EnableAction("ABRI");
-        SetValueBoolean($this->GetIDForIdent("ABRI"),0);
-
-         $this->RegisterVariableBoolean ('ATRANS', 'Automatic Transsions to  next App', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 130);
-        $this->EnableAction("ATRANS");
-        SetValueBoolean($this->GetIDForIdent("ATRANS"),1);
-
-        $this->RegisterVariableBoolean('BLOCKN', 'Local Key Enable', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 160);
-        $this->EnableAction("BLOCKN");
-        SetValueBoolean($this->GetIDForIdent("BLOCKN"),1);
-
-        $this->RegisterVariableBoolean('UPPERCASE', 'Display Uppercase', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 170);
-        $this->EnableAction("UPPERCASE");
-        SetValueBoolean($this->GetIDForIdent("UPPERCASE"),0);
-
-        $this->RegisterVariableInteger ('TIME_COL', 'Time Color', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 180);
-        $this->EnableAction("TIME_COL");
-        SetValueInteger($this->GetIDForIdent("TIME_COL"),16777215);
-
-         $this->RegisterVariableInteger ('DATE_COL', 'Date Color', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 190);
-        $this->EnableAction("DATE_COL");
-        SetValueInteger($this->GetIDForIdent("DATE_COL"),16777215);
-
-        $this->RegisterVariableInteger ('TEMP_COL', 'Temperature Color',[
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 200);
-        $this->EnableAction("TEMP_COL");
-        SetValueInteger($this->GetIDForIdent("TEMP_COL"),16777215);
-
-         $this->RegisterVariableInteger ('HUM_COL', 'Humidity Color', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 210);
-        $this->EnableAction("HUM_COL");
-        SetValueInteger($this->GetIDForIdent("HUM_COL"),16777215);
-
-         $this->RegisterVariableInteger ('BAT_COL', 'Battery Color', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0,
-            'COLOR_SPACE' => 0,
-            'COLOR_CURVE' => 0
-        ], 220);
-        $this->EnableAction("BAT_COL");
-        SetValueInteger($this->GetIDForIdent("BAT_COL"),16777215);
-
-         $this->RegisterVariableInteger ('SSPEED', 'Scrollspeed',[
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0,
-            'MAX' => 100,
-            'PERCENTAGE' => true,
-            'USAGE_TYPE' => 2, ///5 = none
-            'SUFFIX' => ' %'
-        ], 230);
-        $this->EnableAction("SSPEED");
-        SetValueInteger($this->GetIDForIdent("SSPEED"),100);
-
-        $this->RegisterVariableBoolean('MATP', 'Powerswitch', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], 240);
-        $this->EnableAction("MATP");
-        SetValueBoolean($this->GetIDForIdent("MATP"),1);
-
-        $this->RegisterVariableString ('OVERLAY', 'Effectsoverlay', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0,
-            'MAX' => 2000,
-            'STEP_SIZE' => 50,
-            'USAGE_TYPE' => 5, ///5 = none
-            'SUFFIX' => ' ms'
-        ], 250);
-        /*Overlay effects:
-
-            "clear"
-            "snow"
-            "rain"
-            "drizzle"
-            "storm"
-            "thunder"
-            "frost"*/
-           
-        // Diese Zeile nicht löschen.
+        $this->RegisterAllAwtrixVariables();
+     
         $this->UpdateConfig();
 
         $this->RegisterTimer("Update", 0, 'AWSET_UpdateConfig('.$this->InstanceID.');');

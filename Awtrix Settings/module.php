@@ -283,8 +283,7 @@ class AwtrixSettings extends IPSModule {
     }
 
     public function SendSetting() {
-        if (!$this->CheckIP()) {
-            // Discord webhook URL
+        if ($this->CheckIP()) {
             $awtrixIp = $this->ReadPropertyString("AwtrixIp");
             $url="http://{$awtrixIp}/api/settings";
 
@@ -543,13 +542,16 @@ class AwtrixSettings extends IPSModule {
                 if ($http_code == 200) {
                     return true;
                     $this->SetStatus(102);
+                    IPS_LogMessage("AWTRIX","Status 102");
                 } else {
                     return false;
                     $this->SetStatus(104);
+                    IPS_LogMessage("AWTRIX","Status 104");
                 }
             } else {
                 return false;
                 $this->SetStatus(104);
+                IPS_LogMessage("AWTRIX","Status 104 END");
             }
 
     }
