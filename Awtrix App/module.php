@@ -1,565 +1,545 @@
-<?
-// Klassendefinition
-class AwtrixApp extends IPSModule {
-    // Überschreibt die interne IPS_Create($id) Funktion
+<?php
 
-     private function RegisterAllAwtrixVariables(): void
+class AwtrixApp extends IPSModule
+{
+    public function Create()
+    {
+        parent::Create();
+
+        $this->RegisterAttributeString('LastPayload', '');
+        $this->RegisterAttributeString('LastAppName', '');
+
+        $this->RegisterPropertyString('AwtrixIp', '172.78.88.67');
+        $this->RegisterPropertyString('AppName', '');
+        $this->RegisterPropertyString('Prefix', '');
+        $this->RegisterPropertyString('Suffix', '');
+
+        $this->RegisterVariables();
+
+        if ($this->ReadAttributeString('LastPayload') === '') {
+            $this->WriteAttributeString('LastPayload', $this->NormalizeForCompare($this->BuildAppPayload()));
+        }
+
+        if ($this->ReadAttributeString('LastAppName') === '') {
+            $this->WriteAttributeString('LastAppName', $this->GetAppName());
+        }
+    }
+
+    public function ApplyChanges()
+    {
+        parent::ApplyChanges();
+
+        $payload = $this->BuildAppPayload();
+        $payloadChanged = $this->NormalizeForCompare($payload) !== $this->ReadAttributeString('LastPayload');
+        $appNameChanged = $this->GetAppName() !== $this->ReadAttributeString('LastAppName');
+
+        if (!$payloadChanged && !$appNameChanged) {
+            $this->SetStatus(102);
+            return;
+        }
+
+        $this->SendApp();
+    }
+
+    public function RequestAction($Ident, $Value)
+    {
+        SetValue($this->GetIDForIdent($Ident), $Value);
+        $this->SendApp();
+    }
+
+    public function SendApp()
+    {
+        $appName = $this->GetAppName();
+        $payload = $this->BuildAppPayload();
+        $previousAppName = $this->ReadAttributeString('LastAppName');
+
+        if ($previousAppName !== '' && $previousAppName !== $appName) {
+            $this->DeleteAppByName($previousAppName);
+        }
+
+        if (!$this->SendJsonRequest('/api/custom?name=' . rawurlencode($appName), $payload)) {
+            return false;
+        }
+
+        $this->WriteAttributeString('LastPayload', $this->NormalizeForCompare($payload));
+        $this->WriteAttributeString('LastAppName', $appName);
+        return true;
+    }
+
+    public function DeleteApp()
+    {
+        $deleted = $this->DeleteAppByName($this->GetAppName());
+        if ($deleted) {
+            $this->WriteAttributeString('LastPayload', '');
+            $this->WriteAttributeString('LastAppName', '');
+        }
+
+        return $deleted;
+    }
+
+    private function RegisterVariables()
     {
         $p = 0;
 
-        // text
-        $this->RegisterVarStr('text', 'Text', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, '', 1);
-
-        // textCase (0..2)
-        $this->RegisterVarInt('textCase', 'Textcase', [
+        $this->RegisterStringVariableWithDefault('text', 'Text', $this->StringInputPresentation(), $p += 10, '');
+        $this->RegisterIntegerVariableWithDefault('textCase', 'Text Case', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0, 'MAX' => 2, 'STEP_SIZE' => 1,
+            'MIN' => 0,
+            'MAX' => 2,
+            'STEP_SIZE' => 1,
             'USAGE_TYPE' => 5
-        ], $p+=10, 0, 1);
-
-        $this->RegisterVarBool('topText', 'Top Text', [
+        ], $p += 10, 0);
+        $this->RegisterBooleanVariableWithDefault('topText', 'Top Text', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, false, 1);
-
-        $this->RegisterVarInt('textOffset', 'Text Offset', [
+        ], $p += 10, false);
+        $this->RegisterIntegerVariableWithDefault('textOffset', 'Text Offset', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0, 'MAX' => 32, 'STEP_SIZE' => 1,
+            'MIN' => 0,
+            'MAX' => 32,
+            'STEP_SIZE' => 1,
             'USAGE_TYPE' => 5
-        ], $p+=10, 0, 1);
-
-        $this->RegisterVarBool('center', 'Center short text', [
+        ], $p += 10, 0);
+        $this->RegisterBooleanVariableWithDefault('center', 'Center Short Text', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, true, 1);
-
-        // color (text/bar/line)
-        $this->RegisterVarInt('color', 'Color', [
+        ], $p += 10, true);
+        $this->RegisterIntegerVariableWithDefault('color', 'Text/Chart Color', [
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
-        ], $p+=10, 16777215, 1);
-
-        // gradient (AWTRIX expects array of 2 colors) -> we model as enable + 2 colors
-        $this->RegisterVarBool('gradientEnabled', 'Gradient enabled', [
+            'ENCODING' => 0,
+            'COLOR_SPACE' => 0,
+            'COLOR_CURVE' => 0
+        ], $p += 10, 16777215);
+        $this->RegisterBooleanVariableWithDefault('gradientEnabled', 'Gradient Enabled', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, false, 1);
-
-        $this->RegisterVarInt('gradient01', 'Gradient Color 1', [
+        ], $p += 10, false);
+        $this->RegisterIntegerVariableWithDefault('gradient01', 'Gradient Color 1', [
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
-        ], $p+=10, 16777215, 1);
-
-        $this->RegisterVarInt('gradient02', 'Gradient Color 2', [
+            'ENCODING' => 0,
+            'COLOR_SPACE' => 0,
+            'COLOR_CURVE' => 0
+        ], $p += 10, 16777215);
+        $this->RegisterIntegerVariableWithDefault('gradient02', 'Gradient Color 2', [
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
-        ], $p+=10, 16777215, 1);
-
-        // blinkText / fadeText (ms)
-        $this->RegisterVarInt('blinkText', 'Blink Text (ms)', [
+            'ENCODING' => 0,
+            'COLOR_SPACE' => 0,
+            'COLOR_CURVE' => 0
+        ], $p += 10, 16777215);
+        $this->RegisterIntegerVariableWithDefault('blinkText', 'Blink Text (ms)', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0, 'MAX' => 10000, 'STEP_SIZE' => 100,
-            'USAGE_TYPE' => 5, 'SUFFIX' => ' ms'
-        ], $p+=10, 0, 1);
-
-        $this->RegisterVarInt('fadeText', 'Fade Text (ms)', [
+            'MIN' => 0,
+            'MAX' => 10000,
+            'STEP_SIZE' => 100,
+            'USAGE_TYPE' => 5,
+            'SUFFIX' => ' ms'
+        ], $p += 10, 0);
+        $this->RegisterIntegerVariableWithDefault('fadeText', 'Fade Text (ms)', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0, 'MAX' => 10000, 'STEP_SIZE' => 100,
-            'USAGE_TYPE' => 5, 'SUFFIX' => ' ms'
-        ], $p+=10, 0, 1);
-
-        // background
-        $this->RegisterVarInt('background', 'Background', [
+            'MIN' => 0,
+            'MAX' => 10000,
+            'STEP_SIZE' => 100,
+            'USAGE_TYPE' => 5,
+            'SUFFIX' => ' ms'
+        ], $p += 10, 0);
+        $this->RegisterIntegerVariableWithDefault('background', 'Background Color', [
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
-        ], $p+=10, 0, 1);
-
-        $this->RegisterVarBool('rainbow', 'Rainbow text', [
+            'ENCODING' => 0,
+            'COLOR_SPACE' => 0,
+            'COLOR_CURVE' => 0
+        ], $p += 10, 0);
+        $this->RegisterBooleanVariableWithDefault('rainbow', 'Rainbow Text', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, false, 1);
-
-        // icon (id/filename/base64)
-        $this->RegisterVarStr('icon', 'Icon (ID/Filename/Base64)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, '', 1);
-
-        // pushIcon (0..2)
-        $this->RegisterVarInt('pushIcon', 'Push Icon', [
+        ], $p += 10, false);
+        $this->RegisterStringVariableWithDefault('icon', 'Icon (ID/Filename/Base64)', $this->StringInputPresentation(), $p += 10, '');
+        $this->RegisterIntegerVariableWithDefault('pushIcon', 'Push Icon', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0, 'MAX' => 2, 'STEP_SIZE' => 1,
+            'MIN' => 0,
+            'MAX' => 2,
+            'STEP_SIZE' => 1,
             'USAGE_TYPE' => 5
-        ], $p+=10, 0, 1);
-
-        // repeat (-1 = forever)
-        $this->RegisterVarInt('repeat', 'Repeat (-1 forever)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT,
-            'USAGE_TYPE' => 5
-        ], $p+=10, -1, 1);
-
-        // duration (seconds)
-        $this->RegisterVarInt('duration', 'Duration (s)', [
+        ], $p += 10, 0);
+        $this->RegisterIntegerVariableWithDefault('repeat', 'Repeat (-1 Forever)', $this->NumericInputPresentation(), $p += 10, -1);
+        $this->RegisterIntegerVariableWithDefault('duration', 'Duration (s)', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 1, 'MAX' => 300, 'STEP_SIZE' => 1,
-            'USAGE_TYPE' => 5, 'SUFFIX' => ' s'
-        ], $p+=10, 5, 1);
-
-        // Notification-only keys
-        $this->RegisterVarBool('hold', 'Notification: hold', [
+            'MIN' => 1,
+            'MAX' => 300,
+            'STEP_SIZE' => 1,
+            'USAGE_TYPE' => 5,
+            'SUFFIX' => ' s'
+        ], $p += 10, 5);
+        $this->RegisterStringVariableWithDefault('bar', 'Bar Values (JSON/CSV)', $this->StringInputPresentation(), $p += 10, '');
+        $this->RegisterStringVariableWithDefault('line', 'Line Values (JSON/CSV)', $this->StringInputPresentation(), $p += 10, '');
+        $this->RegisterBooleanVariableWithDefault('autoscale', 'Autoscale Bar/Line', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, false, 1);
-
-        $this->RegisterVarStr('sound', 'Notification: sound (filename/id)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, '', 1);
-
-        $this->RegisterVarStr('rtttl', 'Notification: RTTTL string', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, '', 1);
-
-        $this->RegisterVarBool('loopSound', 'Notification: loop sound', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, false, 1);
-
-        // bar / line arrays -> store as JSON or CSV in a string
-        $this->RegisterVarStr('bar', 'Bar values (JSON/CSV)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, '', 1);
-
-        $this->RegisterVarStr('line', 'Line values (JSON/CSV)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, '', 1);
-
-        $this->RegisterVarBool('autoscale', 'Autoscale bar/line', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, true, 1);
-
-        $this->RegisterVarInt('barBC', 'Bar Background Color', [
+        ], $p += 10, true);
+        $this->RegisterIntegerVariableWithDefault('barBC', 'Bar Background Color', [
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
-        ], $p+=10, 0, 1);
-
-        // progress (-1 disables)
-        $this->RegisterVarInt('progress', 'Progress (-1 off, 0..100)', [
+            'ENCODING' => 0,
+            'COLOR_SPACE' => 0,
+            'COLOR_CURVE' => 0
+        ], $p += 10, 0);
+        $this->RegisterIntegerVariableWithDefault('progress', 'Progress (-1 Off, 0-100)', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => -1, 'MAX' => 100, 'STEP_SIZE' => 1,
+            'MIN' => -1,
+            'MAX' => 100,
+            'STEP_SIZE' => 1,
             'USAGE_TYPE' => 5
-        ], $p+=10, -1, 1);
-
-        $this->RegisterVarInt('progressC', 'Progress Color', [
+        ], $p += 10, -1);
+        $this->RegisterIntegerVariableWithDefault('progressC', 'Progress Color', [
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
-        ], $p+=10, -1, 1);
-
-        $this->RegisterVarInt('progressBC', 'Progress Background Color', [
+            'ENCODING' => 0,
+            'COLOR_SPACE' => 0,
+            'COLOR_CURVE' => 0
+        ], $p += 10, 16777215);
+        $this->RegisterIntegerVariableWithDefault('progressBC', 'Progress Background Color', [
             'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
-            'ENCODING' => 0, 'COLOR_SPACE' => 0, 'COLOR_CURVE' => 0
-        ], $p+=10, -1, 1);
-
-        // pos (experimental)
-        $this->RegisterVarInt('pos', 'Position in loop (experimental)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT,
+            'ENCODING' => 0,
+            'COLOR_SPACE' => 0,
+            'COLOR_CURVE' => 0
+        ], $p += 10, 0);
+        $this->RegisterIntegerVariableWithDefault('pos', 'Loop Position', $this->NumericInputPresentation(), $p += 10, 0);
+        $this->RegisterStringVariableWithDefault('draw', 'Draw Instructions (JSON)', $this->StringInputPresentation(), $p += 10, '');
+        $this->RegisterIntegerVariableWithDefault('lifetime', 'Lifetime (s)', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 0,
+            'MAX' => 86400,
+            'STEP_SIZE' => 10,
+            'USAGE_TYPE' => 5,
+            'SUFFIX' => ' s'
+        ], $p += 10, 0);
+        $this->RegisterIntegerVariableWithDefault('lifetimeMode', 'Lifetime Mode', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+            'MIN' => 0,
+            'MAX' => 1,
+            'STEP_SIZE' => 1,
             'USAGE_TYPE' => 5
-        ], $p+=10, 0, 1);
-
-        // draw (array of objects) -> string
-        $this->RegisterVarStr('draw', 'Draw instructions (JSON)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, '', 1);
-
-        // lifetime / lifetimeMode
-        $this->RegisterVarInt('lifetime', 'Lifetime (s)', [
+        ], $p += 10, 0);
+        $this->RegisterBooleanVariableWithDefault('noScroll', 'Disable Scrolling', [
+            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
+        ], $p += 10, false);
+        $this->RegisterIntegerVariableWithDefault('scrollSpeed', 'Scroll Speed (%)', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0, 'MAX' => 86400, 'STEP_SIZE' => 10,
-            'USAGE_TYPE' => 5, 'SUFFIX' => ' s'
-        ], $p+=10, 0, 1);
-
-        $this->RegisterVarInt('lifetimeMode', 'Lifetime Mode (0 delete, 1 stale)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 0, 'MAX' => 1, 'STEP_SIZE' => 1,
-            'USAGE_TYPE' => 5
-        ], $p+=10, 0, 1);
-
-        $this->RegisterVarBool('stack', 'Notification stack', [
+            'MIN' => 10,
+            'MAX' => 200,
+            'STEP_SIZE' => 5,
+            'USAGE_TYPE' => 5,
+            'SUFFIX' => ' %'
+        ], $p += 10, 100);
+        $this->RegisterStringVariableWithDefault('effect', 'Background Effect', $this->StringInputPresentation(), $p += 10, '');
+        $this->RegisterStringVariableWithDefault('effectSettings', 'Effect Settings (JSON Map)', $this->StringInputPresentation(), $p += 10, '');
+        $this->RegisterBooleanVariableWithDefault('save', 'Save App To Flash', [
             'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, true, 1);
-
-        $this->RegisterVarBool('wakeup', 'Wakeup display on notification', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, false, 1);
-
-        $this->RegisterVarBool('noScroll', 'Disable scrolling', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, false, 1);
-
-        $this->RegisterVarStr('clients', 'Forward clients (JSON array)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, '', 1);
-
-        $this->RegisterVarInt('scrollSpeed', 'Scroll Speed (%)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-            'MIN' => 10, 'MAX' => 200, 'STEP_SIZE' => 5,
-            'USAGE_TYPE' => 5, 'SUFFIX' => ' %'
-        ], $p+=10, 100, 1);
-
-        $this->RegisterVarStr('effect', 'Background effect name', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, '', 1);
-
-        $this->RegisterVarStr('effectSettings', 'Effect settings (JSON map)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, '', 1);
-
-        $this->RegisterVarBool('save', 'Save app to flash (careful!)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH
-        ], $p+=10, false, 1);
-
-        // app-specific overlay (clear/snow/rain/...)
-        $this->RegisterVarStr('overlay', 'Overlay (app-specific)', [
-            'PRESENTATION' => VARIABLE_PRESENTATION_INPUT
-        ], $p+=10, 'clear', 1);
-
+        ], $p += 10, false);
+        $this->RegisterStringVariableWithDefault('overlay', 'Overlay', $this->StringInputPresentation(), $p += 10, 'clear');
+        $this->RegisterVariableString('LastPayloadPreview', 'Last Payload', $this->StringInputPresentation(), $p += 10);
     }
-    
-    private function SetDefaultIfNew(string $ident, callable $setter, $value): void
+
+    private function RegisterIntegerVariableWithDefault($ident, $name, array $presentation, $position, $defaultValue)
     {
-        // RegisterVariable* kann je nach Strict/Non-Strict bool oder int liefern.
-        // Deshalb setzen wir Default robust über GetIDForIdent.
-        $varId = @$this->GetIDForIdent($ident);
-        if ($varId > 0) {
-            // Wenn Variable noch "leer" wäre, müsstest du New-Check anders machen.
-            // Pragmatismus: Defaults immer setzen ist oft unerwünscht.
-            // => Wir setzen Defaults NUR, wenn Variable noch nicht existierte: das checken wir über IPS_VariableExists.
-            // Aber: GetIDForIdent wirft Fehler, wenn nicht existiert. Daher oben @.
+        $exists = $this->HasIdent($ident);
+        $this->RegisterVariableInteger($ident, $name, $presentation, $position);
+        $this->EnableAction($ident);
+        if (!$exists) {
+            SetValueInteger($this->GetIDForIdent($ident), $defaultValue);
         }
-
     }
 
-    private function RegisterVarInt(string $ident, string $name, array $presentation, int $pos, int $default, int $enableAction = 1): void
+    private function RegisterBooleanVariableWithDefault($ident, $name, array $presentation, $position, $defaultValue)
     {
-        $ret = $this->RegisterVariableInteger($ident, $name, $presentation, $pos);
-
-        if ($enableAction) {
-            $this->EnableAction($ident);
-        }
-
-        // Default nur setzen, wenn neu erstellt:
-        if ($ret === true || is_int($ret)) {
-            $id = is_int($ret) ? $ret : $this->GetIDForIdent($ident);
-            SetValueInteger($id, $default);
+        $exists = $this->HasIdent($ident);
+        $this->RegisterVariableBoolean($ident, $name, $presentation, $position);
+        $this->EnableAction($ident);
+        if (!$exists) {
+            SetValueBoolean($this->GetIDForIdent($ident), $defaultValue);
         }
     }
 
-    private function RegisterVarBool(string $ident, string $name, array $presentation, int $pos, bool $default, int $enableAction = 1): void
+    private function RegisterStringVariableWithDefault($ident, $name, array $presentation, $position, $defaultValue)
     {
-        $ret = $this->RegisterVariableBoolean($ident, $name, $presentation, $pos);
-
-        if ($enableAction) {
-            $this->EnableAction($ident);
-        }
-
-        if ($ret === true || is_int($ret)) {
-            $id = is_int($ret) ? $ret : $this->GetIDForIdent($ident);
-            SetValueBoolean($id, $default);
+        $exists = $this->HasIdent($ident);
+        $this->RegisterVariableString($ident, $name, $presentation, $position);
+        $this->EnableAction($ident);
+        if (!$exists) {
+            SetValueString($this->GetIDForIdent($ident), $defaultValue);
         }
     }
 
-    private function RegisterVarStr(string $ident, string $name, array $presentation, int $pos, string $default, int $enableAction = 1): void
+    private function HasIdent($ident)
     {
-        $ret = $this->RegisterVariableString($ident, $name, $presentation, $pos);
+        return (@$this->GetIDForIdent($ident) > 0);
+    }
 
-        if ($enableAction) {
-            $this->EnableAction($ident);
+    private function BuildAppPayload()
+    {
+        $payload = [
+            'textCase' => GetValueInteger($this->GetIDForIdent('textCase')),
+            'topText' => GetValueBoolean($this->GetIDForIdent('topText')),
+            'textOffset' => GetValueInteger($this->GetIDForIdent('textOffset')),
+            'center' => GetValueBoolean($this->GetIDForIdent('center')),
+            'color' => $this->ColorToApi(GetValueInteger($this->GetIDForIdent('color'))),
+            'blinkText' => GetValueInteger($this->GetIDForIdent('blinkText')),
+            'fadeText' => GetValueInteger($this->GetIDForIdent('fadeText')),
+            'background' => $this->ColorToApi(GetValueInteger($this->GetIDForIdent('background'))),
+            'rainbow' => GetValueBoolean($this->GetIDForIdent('rainbow')),
+            'pushIcon' => GetValueInteger($this->GetIDForIdent('pushIcon')),
+            'repeat' => GetValueInteger($this->GetIDForIdent('repeat')),
+            'duration' => GetValueInteger($this->GetIDForIdent('duration')),
+            'autoscale' => GetValueBoolean($this->GetIDForIdent('autoscale')),
+            'noScroll' => GetValueBoolean($this->GetIDForIdent('noScroll')),
+            'scrollSpeed' => GetValueInteger($this->GetIDForIdent('scrollSpeed'))
+        ];
+
+        $text = $this->ReadPropertyString('Prefix') . GetValueString($this->GetIDForIdent('text')) . $this->ReadPropertyString('Suffix');
+        if ($text !== '') {
+            $payload['text'] = $text;
         }
 
-        if ($ret === true || is_int($ret)) {
-            $id = is_int($ret) ? $ret : $this->GetIDForIdent($ident);
-            SetValueString($id, $default);
+        $icon = trim(GetValueString($this->GetIDForIdent('icon')));
+        if ($icon !== '') {
+            $payload['icon'] = $icon;
         }
-    }
 
-
-    
-    public function Create() {
-
-        $this->RegisterAttributeString('Settings','');
-
-
-        $this->RegisterPropertyString('AwtrixIp','172.78.88.67');
-        $this->RegisterPropertyString('Prefix','');
-        $this->RegisterPropertyString('Suffix','');
-
-        $this->RegisterAllAwtrixVariables();
-     
-        $this->UpdateConfig();
-
-        $this->RegisterTimer("Update", 0, 'AWSET_UpdateConfig('.$this->InstanceID.');');
-        $this->SetTimerInterval("Update", 10 * 1000);
-
-        parent::Create();
-
-    }
-
-    // Überschreibt die intere IPS_ApplyChanges($id) Funktion
-    public function ApplyChanges() {
-
-            $this->SendSetting();
-            $this->SendReboot();
-
-        // Diese Zeile nicht löschen
-        parent::ApplyChanges();
-    }
-    /**
-    * Die folgenden Funktionen stehen automatisch zur Verfügung, wenn das Modul über die "Module Control" eingefügt wurden.
-    * Die Funktionen werden, mit dem selbst eingerichteten Prefix, in PHP und JSON-RPC wiefolgt zur Verfügung gestellt:
-    *
-    * DWM_SendMessage($id);
-    *
-    */
-    public function RequestAction($Ident, $Value) {
-                $varid = $this->GetIDForIdent($Ident);
-                SetValue($varid, $Value);
-
-                
-                $this->SendSetting();
-    }
-
-    public function SendSetting() {
-   
-            // Discord webhook URL
-            $awtrixIp = $this->ReadPropertyString("AwtrixIp");
-            $url="http://{$awtrixIp}/api/settings";
-
-            $atime = GetValue($this->GetIDForIdent('ATIME'));
-            $teff = GetValue($this->GetIDForIdent('TEFF'));
-            $tspeed = GetValue($this->GetIDForIdent('TSPEED'));
-            $tcol = GetValue($this->GetIDForIdent('TCOL'));
-            $tmode = GetValue($this->GetIDForIdent('TMODE'));
-
-            $chcol = GetValue($this->GetIDForIdent('CHCOL'));
-            $cbcol = GetValue($this->GetIDForIdent('CBCOL'));
-            $ctcol = GetValue($this->GetIDForIdent('CTCOL'));
-            $wd = GetValueBoolean($this->GetIDForIdent('WD'));
-            $wdca = GetValue($this->GetIDForIdent('WDCA'));
-            $wdci = GetValue($this->GetIDForIdent('WDCI'));
-            $bri = GetValue($this->GetIDForIdent('BRI'));
-            $abri = GetValueBoolean($this->GetIDForIdent('ABRI'));
-            $atrans = GetValueBoolean($this->GetIDForIdent('ATRANS'));
-
-            $ccorrection = $this->ReadPropertyInteger("CCORRECTION");
-            $ctemp = $this->ReadPropertyInteger("CTEMP");
-
-            $tformat = $this->ReadPropertyString("TFORMAT");
-            $dformat = $this->ReadPropertyString("DFORMAT");
-
-            $som = $this->ReadPropertyBoolean("SOM");
-            $cel = $this->ReadPropertyBoolean("CEL");
-
-            $blockn = GetValueBoolean($this->GetIDForIdent('BLOCKN'));
-            $uppercase = GetValueBoolean($this->GetIDForIdent('UPPERCASE'));
-
-            $time_col = GetValue($this->GetIDForIdent('TIME_COL'));
-            $date_col = GetValue($this->GetIDForIdent('DATE_COL'));
-            $temp_col = GetValue($this->GetIDForIdent('TEMP_COL'));
-            $hum_col = GetValue($this->GetIDForIdent('HUM_COL'));
-            $bat_col = GetValue($this->GetIDForIdent('BAT_COL'));
-
-            $sspeed = GetValue($this->GetIDForIdent('SSPEED'));
-
-            $tim = $this->ReadPropertyBoolean("TIM");
-            $dat= $this->ReadPropertyBoolean("DAT");
-            $hum = $this->ReadPropertyBoolean("HUM");
-            $temp = $this->ReadPropertyBoolean("TEMP");
-            $bat = $this->ReadPropertyBoolean("BAT");
-
-            $matp = GetValueBoolean($this->GetIDForIdent('MATP'));
-
-
-            $settings = [
-
-                // Anzeige
-                "ATIME" => $atime,
-                "TEFF" => $teff,
-                "TSPEED" => $tspeed,
-                "TMODE" => $tmode,
-
-                // Farben
-                "TCOL" => dechex($tcol),
-                "TIME_COL" => dechex($time_col),
-                "DATE_COL" => dechex($date_col),
-                "TEMP_COL" => dechex($temp_col),
-                "HUM_COL" => dechex($hum_col),
-                "BAT_COL" => dechex($bat_col),
-
-                "CHCOL" => dechex($chcol),
-                "CBCOL" => dechex($cbcol),
-                "CTCOL" => dechex($ctcol),
-
-                "WDCA" => dechex($wdca),
-                "WDCI" => dechex($wdci),
-
-                // Time / Date
-                "TFORMAT" => $tformat,
-                "DFORMAT" => $dformat,
-
-                // Verhalten
-                "WD" => $wd,
-                "SOM" => $som,
-                "CEL" => $cel,
-
-                // Matrix
-                "BRI" => $bri,
-                "ABRI" => $abri,
-                "ATRANS" => $atrans,
-                "CCORRECTION" => $ccorrection,
-                "CTEMP" => $ctemp,
-                "BLOCKN" => $blockn,
-                "UPPERCASE" => $uppercase,
-                "MATP" => $matp,
-
-                // Apps aktivieren
-                "TIM" => $tim,
-                "DAT" => $dat,
-                "TEMP" => $temp,
-                "HUM" => $hum,
-                "BAT" => $bat,
-
-                // Overlay Effekt
-                "OVERLAY" => "clear",
-
-                // Scroll Speed
-                "SSPEED" => $sspeed,
-
-                // Sound
-                "VOL" => 10
+        if (GetValueBoolean($this->GetIDForIdent('gradientEnabled'))) {
+            $payload['gradient'] = [
+                $this->ColorToApi(GetValueInteger($this->GetIDForIdent('gradient01'))),
+                $this->ColorToApi(GetValueInteger($this->GetIDForIdent('gradient02')))
             ];
+        }
 
-            // =============================
-            // CURL Request
-            // =============================
-            $ch = curl_init($url);
+        $bar = $this->ParseIntListVariable('bar');
+        if ($bar !== null) {
+            $payload['bar'] = $bar;
+            $payload['barBC'] = $this->ColorToApi(GetValueInteger($this->GetIDForIdent('barBC')));
+        }
 
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                "Content-Type: application/json"
-            ]);
+        $line = $this->ParseIntListVariable('line');
+        if ($line !== null) {
+            $payload['line'] = $line;
+        }
 
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($settings));
+        $progress = GetValueInteger($this->GetIDForIdent('progress'));
+        if ($progress >= 0) {
+            $payload['progress'] = $progress;
+            $payload['progressC'] = $this->ColorToApi(GetValueInteger($this->GetIDForIdent('progressC')));
+            $payload['progressBC'] = $this->ColorToApi(GetValueInteger($this->GetIDForIdent('progressBC')));
+        }
 
-            $response = curl_exec($ch);
-            $error = curl_error($ch);
+        $draw = $this->ParseJsonVariable('draw', true);
+        if ($draw !== null) {
+            $payload['draw'] = $draw;
+        }
 
-            curl_close($ch);
-        
-            //$this->WriteAttributeString('Settings',$settings);
+        $pos = GetValueInteger($this->GetIDForIdent('pos'));
+        if ($pos >= 0) {
+            $payload['pos'] = $pos;
+        }
 
-    
+        $lifetime = GetValueInteger($this->GetIDForIdent('lifetime'));
+        if ($lifetime > 0) {
+            $payload['lifetime'] = $lifetime;
+            $payload['lifetimeMode'] = GetValueInteger($this->GetIDForIdent('lifetimeMode'));
+        }
+
+        $effect = trim(GetValueString($this->GetIDForIdent('effect')));
+        if ($effect !== '') {
+            $payload['effect'] = $effect;
+        }
+
+        $effectSettings = $this->ParseJsonVariable('effectSettings', false);
+        if ($effectSettings !== null) {
+            $payload['effectSettings'] = $effectSettings;
+        }
+
+        if (GetValueBoolean($this->GetIDForIdent('save'))) {
+            $payload['save'] = true;
+        }
+
+        $overlay = trim(GetValueString($this->GetIDForIdent('overlay')));
+        if ($overlay !== '') {
+            $payload['overlay'] = $overlay;
+        }
+
+        return $payload;
     }
-    public function UpdateConfig() {
-   
-            $awtrixIp = $this->ReadPropertyString("AwtrixIp");
-            $url="http://{$awtrixIp}/api/settings";
-            
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPGET, true);
 
-            $response = curl_exec($ch);
-            $error = curl_error($ch);
+    private function ParseIntListVariable($ident)
+    {
+        $value = trim(GetValueString($this->GetIDForIdent($ident)));
+        if ($value === '') {
+            return null;
+        }
 
-            curl_close($ch);
+        $json = json_decode($value, true);
+        if (is_array($json)) {
+            return array_map('intval', $json);
+        }
 
-            if ($error) {
-                echo "CURL Error: " . $error;
-                exit;
+        $parts = preg_split('/[\s,;]+/', $value, -1, PREG_SPLIT_NO_EMPTY);
+        if (!is_array($parts) || count($parts) === 0) {
+            return null;
+        }
+
+        return array_map('intval', $parts);
+    }
+
+    private function ParseJsonVariable($ident, $expectList)
+    {
+        $value = trim(GetValueString($this->GetIDForIdent($ident)));
+        if ($value === '') {
+            return null;
+        }
+
+        $decoded = json_decode($value, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+            IPS_LogMessage('AWTRIX', 'Invalid JSON in ' . $ident . ': ' . json_last_error_msg());
+            return null;
+        }
+
+        if ($expectList && array_keys($decoded) !== range(0, count($decoded) - 1)) {
+            IPS_LogMessage('AWTRIX', 'Expected JSON array in ' . $ident);
+            return null;
+        }
+
+        if (!$expectList && array_keys($decoded) === range(0, count($decoded) - 1)) {
+            IPS_LogMessage('AWTRIX', 'Expected JSON object/map in ' . $ident);
+            return null;
+        }
+
+        return $decoded;
+    }
+
+    private function GetAppName()
+    {
+        $appName = trim($this->ReadPropertyString('AppName'));
+        if ($appName === '') {
+            $appName = IPS_GetName($this->InstanceID);
+        }
+
+        $appName = preg_replace('/\s+/', '_', $appName);
+        $appName = preg_replace('/[^A-Za-z0-9_-]/', '', $appName);
+
+        if ($appName === '' || $appName === null) {
+            $appName = 'app_' . $this->InstanceID;
+        }
+
+        return $appName;
+    }
+
+    private function DeleteAppByName($appName)
+    {
+        if ($appName === '') {
+            return true;
+        }
+
+        return $this->SendRawPost('/api/custom?name=' . rawurlencode($appName), '');
+    }
+
+    private function SendJsonRequest($path, array $payload)
+    {
+        $response = $this->RequestAwtrix('POST', $path, json_encode($payload), ['Content-Type: application/json']);
+        if ($response['success']) {
+            SetValueString($this->GetIDForIdent('LastPayloadPreview'), json_encode($payload));
+        }
+
+        return $response['success'];
+    }
+
+    private function SendRawPost($path, $body)
+    {
+        return $this->RequestAwtrix('POST', $path, $body, [])['success'];
+    }
+
+    private function RequestAwtrix($method, $path, $body = null, array $headers = [])
+    {
+        $awtrixIp = trim($this->ReadPropertyString('AwtrixIp'));
+        $url = 'http://' . $awtrixIp . $path;
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT_MS, 2000);
+        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 5000);
+
+        if ($method === 'POST') {
+            curl_setopt($ch, CURLOPT_POST, true);
+            if (count($headers) > 0) {
+                curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             }
+            if ($body !== null) {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+            }
+        } else {
+            curl_setopt($ch, CURLOPT_HTTPGET, true);
+        }
 
-            $data = json_decode($response, true);
-            
-          //  $persData = $this->ReadAttributeString('Settings');
-           
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-            Setvalue($this->GetIDForIdent('ATIME'),$data['ATIME']);
-            Setvalue($this->GetIDForIdent('TEFF'),$data['TEFF']);
-            Setvalue($this->GetIDForIdent('TSPEED'),$data['TSPEED']);
-            Setvalue($this->GetIDForIdent('TCOL'),$data['TCOL']);
-            Setvalue($this->GetIDForIdent('TMODE'),$data['TMODE']);
-            Setvalue($this->GetIDForIdent('CHCOL'),$data['CHCOL']);
-            Setvalue($this->GetIDForIdent('CBCOL'),$data['CBCOL']);
-            Setvalue($this->GetIDForIdent('CTCOL'),$data['CTCOL']);
-            SetValueBoolean($this->GetIDForIdent('WD'),$data['WD'] ?? false);
-            Setvalue($this->GetIDForIdent('WDCA'),$data['WDCA']);
-            Setvalue($this->GetIDForIdent('WDCI'),$data['WDCI']);
-            Setvalue($this->GetIDForIdent('BRI'),$data['BRI']);
-            SetValueBoolean($this->GetIDForIdent('ABRI'),$data['ABRI'] ?? false);
-            SetValueBoolean($this->GetIDForIdent('ATRANS'),$data['ATRANS'] ?? false);
+        if ($response === false || $error !== '') {
+            $this->SetStatus(104);
+            IPS_LogMessage('AWTRIX', 'CURL error on ' . $path . ': ' . $error);
+            return ['success' => false, 'raw' => $response];
+        }
 
-            $this->UpdateFormField("CCORRECTION",'value',hexdec($data['CCORRECTION']) ?? 0);
-            $this->UpdateFormField("CTEMP",'value',hexdec($data['CTEMP']) ?? 0);
+        if ($httpCode < 200 || $httpCode >= 300) {
+            $this->SetStatus(104);
+            IPS_LogMessage('AWTRIX', 'HTTP ' . $httpCode . ' on ' . $path . ': ' . $response);
+            return ['success' => false, 'raw' => $response];
+        }
 
-            $this->UpdateFormField("TFORMAT",'value',$data['TFORMAT']);
-            $this->UpdateFormField("DFORMAT",'value',$data['DFORMAT']);
-
-            $this->UpdateFormField("SOM",'value',$data['SOM'] ?? true);
-            $this->UpdateFormField("CEL",'value',$data['CEL'] ?? true);
-
-            SetValueBoolean($this->GetIDForIdent('BLOCKN'), $data['BLOCKN'] ?? false);
-            SetValueBoolean($this->GetIDForIdent('UPPERCASE'), $data['UPPERCASE'] ?? false);
-
-            Setvalue($this->GetIDForIdent('TIME_COL'),hexdec($data['TIME_COL']));
-            Setvalue($this->GetIDForIdent('DATE_COL'),hexdec($data['DATE_COL']));
-            Setvalue($this->GetIDForIdent('TEMP_COL'),hexdec($data['TEMP_COL']));
-            Setvalue($this->GetIDForIdent('HUM_COL'),hexdec($data['HUM_COL']));
-            Setvalue($this->GetIDForIdent('BAT_COL'),hexdec($data['BAT_COL']));
-            
-            Setvalue($this->GetIDForIdent('SSPEED'),$data['SSPEED']);
-            
-            $this->UpdateFormField("TIM",'value',$data['TIM']);
-            $this->UpdateFormField("DAT",'value',$data['DAT']);
-            $this->UpdateFormField("HUM",'value',$data['HUM']);
-            $this->UpdateFormField("TEMP",'value',$data['TEMP']);
-            $this->UpdateFormField("BAT",'value',$data['BAT']);
-
-            SetValueBoolean($this->GetIDForIdent('MATP'),$data['MATP'] ?? false);
-
-            //$this->WriteAttributeString('Settings',$data);
-
-            
-  
-
+        $this->SetStatus(102);
+        return ['success' => true, 'raw' => $response];
     }
 
-    public function SendReboot() {
-   
-            // Discord webhook URL
-            $awtrixIp = $this->ReadPropertyString("AwtrixIp");
-            $url="http://{$awtrixIp}/api/reboot";
-
-            $settings = [
-
-                // Anzeige
-
-            ];
-
-            // =============================
-            // CURL Request
-            // =============================
-            $ch = curl_init($url);
-
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                "Content-Type: application/json"
-            ]);
-
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($settings));
-
-            $response = curl_exec($ch);
-            $error = curl_error($ch);
-
-            curl_close($ch);
-
+    private function ColorToApi($value)
+    {
+        $value = max(0, min((int) $value, 16777215));
+        return '#' . strtoupper(str_pad(dechex($value), 6, '0', STR_PAD_LEFT));
     }
 
+    private function NormalizeForCompare(array $value)
+    {
+        return json_encode($this->NormalizeValue($value));
+    }
+
+    private function NormalizeValue($value)
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        if (array_keys($value) === range(0, count($value) - 1)) {
+            return array_map([$this, 'NormalizeValue'], $value);
+        }
+
+        ksort($value);
+        foreach ($value as $key => $item) {
+            $value[$key] = $this->NormalizeValue($item);
+        }
+
+        return $value;
+    }
+
+    private function StringInputPresentation()
+    {
+        if (defined('VARIABLE_PRESENTATION_INPUT')) {
+            return ['PRESENTATION' => VARIABLE_PRESENTATION_INPUT];
+        }
+
+        return [];
+    }
+
+    private function NumericInputPresentation()
+    {
+        if (defined('VARIABLE_PRESENTATION_VALUE_INPUT')) {
+            return ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_INPUT];
+        }
+
+        if (defined('VARIABLE_PRESENTATION_INPUT')) {
+            return ['PRESENTATION' => VARIABLE_PRESENTATION_INPUT];
+        }
+
+        return [];
+    }
 }
 
 ?>
