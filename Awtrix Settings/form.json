@@ -7,6 +7,7 @@
         { "type": "CheckBox", "name": "HUM", "caption": "Enable Humidity App" },
         { "type": "CheckBox", "name": "TEMP", "caption": "Enable Temp App" },
         { "type": "CheckBox", "name": "BAT", "caption": "Enable Battery App" },
+        { "type": "Label", "caption": "Changes to app enablement are sent on Apply and trigger an automatic reboot after a successful update." },
         { "type": "Select", "name": "TFORMAT", "caption": "Time-Format",
         "options": [
                 { "caption": "13:30:45", "value": "%H:%M:%S" },
@@ -35,7 +36,8 @@
         { "type": "CheckBox", "name": "SOM", "caption": "Start the week on Monday" },
         { "type": "CheckBox", "name": "CEL", "caption": "Shows the temperature in Celsius (Fahrenheit when false)." },
         { "type": "SelectColor", "name": "CCORRECTION", "caption": "Color Correction","allowTransparent": false },
-        { "type": "SelectColor", "name": "CTEMP", "caption": "Color Temperatur","allowTransparent": false }
+        { "type": "SelectColor", "name": "CTEMP", "caption": "Color Temperatur","allowTransparent": false },
+        { "type": "Label", "caption": "Use Apply to send changed configuration values. 'Send Settings' resends the currently saved instance configuration." }
     ],
     "actions":
     [
